@@ -1,6 +1,8 @@
 package com.lvshi.camera
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.SurfaceTexture
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
@@ -8,6 +10,7 @@ import android.opengl.GLSurfaceView
 import android.util.AttributeSet
 import android.view.View
 import androidx.annotation.NonNull
+import androidx.core.app.ActivityCompat
 import com.lvshi.camera.utils.LogUtil
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -67,7 +70,9 @@ class CameraView(context: Context, attributeSet: AttributeSet) :
         mDirectDrawer = DirectDrawer()
         // open camera
         cameraKit = CameraKit(context, surfaceTexture)
-        cameraKit.startCameraPreview(width, height)
+        if(ActivityCompat.checkSelfPermission(context,Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED){
+            cameraKit.startCameraPreview(width, height)
+        }
     }
 
     override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
@@ -91,20 +96,26 @@ class CameraView(context: Context, attributeSet: AttributeSet) :
         }
     }
 
-    fun startRecordVideo(@NonNull videoPath: String) {
-        cameraKit.startRecordVideo(videoPath)
+    fun startPreview(){
+        if(ActivityCompat.checkSelfPermission(context,Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED){
+            cameraKit.startCameraPreview(width, height)
+        }
     }
 
-    fun isRecordingVideo(): Boolean = cameraKit.isRecordingVideo()
+    fun startRecordVideo(@NonNull videoPath: String) {
+        cameraKit?.startRecordVideo(videoPath)
+    }
+
+    fun isRecordingVideo(): Boolean = cameraKit?.isRecordingVideo()
 
     fun stopRecordVideo() {
-        cameraKit.stopRecordVideo()
+        cameraKit?.stopRecordVideo()
     }
 
     fun switchCamera() {
-        cameraKit.switchCamera(width, height)
+        cameraKit?.switchCamera(width, height)
     }
 
-    fun isFrontCamera(): Boolean = cameraKit.isFrontCamera()
+    fun isFrontCamera(): Boolean = cameraKit?.isFrontCamera()
 
 }
