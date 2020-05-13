@@ -20,6 +20,7 @@ import android.util.SparseIntArray
 import android.view.Surface
 import androidx.annotation.NonNull
 import androidx.annotation.RequiresApi
+import com.example.camera.BuildConfig
 import com.lvshi.camera.utils.LogUtil
 import java.io.IOException
 import java.util.*
@@ -29,8 +30,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 @Suppress("deprecation")
 class CameraKit(
-    @NonNull val context: Context,
-    @NonNull private val surfaceTexture: SurfaceTexture
+        @NonNull val context: Context,
+        @NonNull private val surfaceTexture: SurfaceTexture
 ) {
 
     val TAG = "CameraKit"
@@ -183,7 +184,7 @@ class CameraKit(
     }
 
     private fun checkSdkMoreThan21(): Boolean =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
 
     private fun startPreview() {
         if (checkSdkMoreThan21()) {
@@ -191,24 +192,25 @@ class CameraKit(
             try {
                 //closePreviewSession()
                 val texture = surfaceTexture
+                LogUtil.d(TAG, "previewSize(${previewSize.width},\t${previewSize.height})")
                 texture.setDefaultBufferSize(previewSize.width, previewSize.height)
                 previewRequestBuilder =
-                    cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+                        cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
 
                 val previewSurface = Surface(texture)
                 previewRequestBuilder.addTarget(previewSurface)
 
                 cameraDevice?.createCaptureSession(listOf(previewSurface),
-                    object : CameraCaptureSession.StateCallback() {
+                        object : CameraCaptureSession.StateCallback() {
 
-                        override fun onConfigured(session: CameraCaptureSession) {
-                            captureSession = session
-                            updatePreview()
-                        }
+                            override fun onConfigured(session: CameraCaptureSession) {
+                                captureSession = session
+                                updatePreview()
+                            }
 
-                        override fun onConfigureFailed(session: CameraCaptureSession) {
-                        }
-                    }, backgroundHandler
+                            override fun onConfigureFailed(session: CameraCaptureSession) {
+                            }
+                        }, backgroundHandler
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -226,8 +228,8 @@ class CameraKit(
             try {
                 setUpCaptureRequestBuilder(previewRequestBuilder)
                 captureSession?.setRepeatingRequest(
-                    previewRequestBuilder.build(),
-                    null, backgroundHandler
+                        previewRequestBuilder.build(),
+                        null, backgroundHandler
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -256,7 +258,7 @@ class CameraKit(
         releaseCamera()
         if (checkSdkMoreThan21()) {
             val lens =
-                if (currentCameraId != CameraCharacteristics.LENS_FACING_FRONT.toString()) CameraCharacteristics.LENS_FACING_FRONT.toString() else CameraCharacteristics.LENS_FACING_BACK.toString()
+                    if (currentCameraId != CameraCharacteristics.LENS_FACING_FRONT.toString()) CameraCharacteristics.LENS_FACING_FRONT.toString() else CameraCharacteristics.LENS_FACING_BACK.toString()
             if (!cameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw RuntimeException("Time out waiting to lock camera opening.")
             }
@@ -265,12 +267,12 @@ class CameraKit(
             // Choose the sizes for camera preview and video recording
             val characteristics = cameraManager.getCameraCharacteristics(cameraId)
             val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-                ?: throw RuntimeException("Cannot get available preview/video sizes")
+                    ?: throw RuntimeException("Cannot get available preview/video sizes")
             sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)!!
             videoSize = chooseVideoSize(map.getOutputSizes(MediaRecorder::class.java))
             previewSize = chooseOptimalSize(
-                map.getOutputSizes(SurfaceTexture::class.java),
-                width, height, videoSize
+                    map.getOutputSizes(SurfaceTexture::class.java),
+                    width, height, videoSize
             )
             cameraManager.openCamera(cameraId, stateCallback, mainHnadler)
         }
@@ -292,18 +294,19 @@ class CameraKit(
                 throw RuntimeException("Time out waiting to lock camera opening.")
             }
             val cameraId =
-                manager.cameraIdList.filter { it == CameraCharacteristics.LENS_FACING_FRONT.toString() }[0]
+                    manager.cameraIdList.filter { it == CameraCharacteristics.LENS_FACING_FRONT.toString() }[0]
             currentCameraId = cameraId;
             // Choose the sizes for camera preview and video recording
             val characteristics = manager.getCameraCharacteristics(cameraId)
             val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-                ?: throw RuntimeException("Cannot get available preview/video sizes")
+                    ?: throw RuntimeException("Cannot get available preview/video sizes")
             sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)!!
             videoSize = chooseVideoSize(map.getOutputSizes(MediaRecorder::class.java))
             previewSize = chooseOptimalSize(
-                map.getOutputSizes(SurfaceTexture::class.java),
-                width, height, videoSize
+                    map.getOutputSizes(SurfaceTexture::class.java),
+                    width, height, videoSize
             )
+            LogUtil.d(TAG, "previewSize(${previewSize.width},\t${previewSize.height}),videoSize(${videoSize.width},\t${videoSize.height})")
             manager.openCamera(cameraId, stateCallback, mainHnadler)
         } else {
             openCamera1()
@@ -343,12 +346,12 @@ class CameraKit(
             mParameters = mCamera!!.parameters
             // 如果摄像头不支持这些参数都会出错的，所以设置的时候一定要判断是否支持
             val supportedFlashModes =
-                mParameters!!.supportedFlashModes
+                    mParameters!!.supportedFlashModes
             if (supportedFlashModes != null && supportedFlashModes.contains(Camera.Parameters.FLASH_MODE_OFF)) {
                 mParameters!!.flashMode = Camera.Parameters.FLASH_MODE_OFF // 设置闪光模式
             }
             val supportedFocusModes =
-                mParameters!!.supportedFocusModes
+                    mParameters!!.supportedFocusModes
             if (supportedFocusModes != null && supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
                 mParameters!!.focusMode = Camera.Parameters.FOCUS_MODE_AUTO // 设置聚焦模式
             }
@@ -356,20 +359,20 @@ class CameraKit(
             mParameters!!.pictureFormat = ImageFormat.JPEG // 设置拍照图片格式
             mParameters!!.exposureCompensation = 0 // 设置曝光强度
             val previewSize: Camera.Size =
-                getSuitableSize(mParameters!!.supportedPreviewSizes)
+                    getSuitableSize(mParameters!!.supportedPreviewSizes)
             mPreviewWidth = previewSize.width
             mPreviewHeight = previewSize.height
             mParameters!!.setPreviewSize(mPreviewWidth, mPreviewHeight) // 设置预览图片大小
             Log.d(
-                TAG,
-                "previewWidth: $mPreviewWidth, previewHeight: $mPreviewHeight"
+                    TAG,
+                    "previewWidth: $mPreviewWidth, previewHeight: $mPreviewHeight"
             )
             val pictureSize: Camera.Size =
-                getSuitableSize(mParameters!!.supportedPictureSizes)
+                    getSuitableSize(mParameters!!.supportedPictureSizes)
             mParameters!!.setPictureSize(pictureSize.width, pictureSize.height)
             Log.d(
-                TAG,
-                "pictureWidth: " + pictureSize.width + ", pictureHeight: " + pictureSize.height
+                    TAG,
+                    "pictureWidth: " + pictureSize.width + ", pictureHeight: " + pictureSize.height
             )
             mCamera!!.parameters = mParameters // 将设置好的parameters添加到相机里
         } catch (e: java.lang.Exception) {
@@ -405,8 +408,8 @@ class CameraKit(
         for (i in sizes.indices) {
             val size = sizes[i]
             Log.v(
-                TAG,
-                "SupportedSize, width: " + size.width + ", height: " + size.height
+                    TAG,
+                    "SupportedSize, width: " + size.width + ", height: " + size.height
             )
             // 先判断比例是否相等
             if (size.width * mPreviewScale == size.height.toFloat()) {
@@ -424,30 +427,58 @@ class CameraKit(
     }
 
     @TargetApi(21)
-    private fun chooseVideoSize(choices: Array<Size>) = choices.firstOrNull {
-        it.width == it.height * 4 / 3 && it.width <= 1080
-    } ?: choices[choices.size - 1]
+    private fun chooseVideoSize(choices: Array<Size>): Size {
+        if (BuildConfig.DEBUG) {
+            LogUtil.d(TAG, "VideoSize---------------------${choices == null} \t ${choices?.size}")
+            choices.forEach {
+                LogUtil.d(TAG, "Size(${it.width} ,\t ${it.height})")
+            }
+            LogUtil.d(TAG, "VideoSize---------------------")
+        }
+        return choices.firstOrNull { it.width == it.height * 3 / 2 } ?: choices[0]
+    }
 
+    /**
+     * Given [choices] of [Size]s supported by a camera, chooses the smallest one whose
+     * width and height are at least as large as the respective requested values, and whose aspect
+     * ratio matches with the specified value.
+     *
+     * @param choices     The list of sizes that the camera supports for the intended output class
+     * @param width       The minimum desired width
+     * @param height      The minimum desired height
+     * @param aspectRatio The aspect ratio
+     * @return The optimal [Size], or an arbitrary one if none were big enough
+     */
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun chooseOptimalSize(
-        sizes: Array<Size>,
-        viewWidth: Int,
-        viewHeight: Int,
-        pictureSize: Size
+            choices: Array<Size>,
+            width: Int,
+            height: Int,
+            aspectRatio: Size
     ): Size {
-        val totalRotation = getRotation()
-        val swapRotation = totalRotation == 90 || totalRotation == 270
-        val width = if (swapRotation) viewHeight else viewWidth
-        val height = if (swapRotation) viewWidth else viewHeight
-        return getSuitableSize(sizes, width, height, pictureSize)
+        LogUtil.d(TAG, "ViewSize(${width} \t ${height})")
+        // Collect the supported resolutions that are at least as big as the preview Surface
+        val w = aspectRatio.width
+        val h = aspectRatio.height
+        LogUtil.d(TAG, "videoSize(${w},\t ${h})")
+        val bigEnough = choices.filter {
+            LogUtil.d(TAG, "chooseOptimalSize(${it.width} ,\t ${it.height})")
+            it.width == it.height * 3 / 2 && it.width <= width && it.height <= height
+        }
+        // Pick the smallest of those, assuming we found any
+        return if (bigEnough.isNotEmpty()) {
+            bigEnough[0]
+        } else {
+            choices[0]
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun getSuitableSize(
-        sizes: Array<Size>,
-        width: Int,
-        height: Int,
-        pictureSize: Size
+            sizes: Array<Size>,
+            width: Int,
+            height: Int,
+            pictureSize: Size
     ): Size {
         var minDelta = Int.MAX_VALUE // 最小的差值，初始值应该设置大点保证之后的计算中会被重置
         var index = 0 // 最小的差值对应的索引坐标
@@ -504,29 +535,29 @@ class CameraKit(
                     add(recorderSurface)
                 }
                 previewRequestBuilder =
-                    cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_RECORD).apply {
-                        addTarget(previewSurface)
-                        addTarget(recorderSurface)
-                    }
+                        cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_RECORD).apply {
+                            addTarget(previewSurface)
+                            addTarget(recorderSurface)
+                        }
 
                 // Start a capture session
                 // Once the session starts, we can update the UI and start recording
                 cameraDevice?.createCaptureSession(surfaces,
-                    object : CameraCaptureSession.StateCallback() {
+                        object : CameraCaptureSession.StateCallback() {
 
-                        override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
-                            captureSession = cameraCaptureSession
-                            updatePreview()
-                            mainHnadler.post {
-                                mediaRecorder?.start()
-                                isRecordingVideo.set(true)
+                            override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
+                                captureSession = cameraCaptureSession
+                                updatePreview()
+                                mainHnadler.post {
+                                    mediaRecorder?.start()
+                                    isRecordingVideo.set(true)
+                                }
                             }
-                        }
 
-                        override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
-                            LogUtil.d(TAG, "Camera configure failed")
-                        }
-                    }, backgroundHandler
+                            override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
+                                LogUtil.d(TAG, "Camera configure failed")
+                            }
+                        }, backgroundHandler
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -572,6 +603,7 @@ class CameraKit(
             SENSOR_ORIENTATION_INVERSE_DEGREES ->
                 mediaRecorder?.setOrientationHint(INVERSE_ORIENTATIONS.get(rotation))
         }
+
         mediaRecorder?.apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
             setVideoSource(MediaRecorder.VideoSource.SURFACE)
