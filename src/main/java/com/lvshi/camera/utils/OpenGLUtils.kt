@@ -1,10 +1,14 @@
 package com.lvshi.camera.utils
 
+import android.content.Context
 import android.content.res.Resources
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
 import android.util.Log
+import java.io.BufferedReader
 import java.io.IOException
+import java.io.InputStream
+import java.io.InputStreamReader
 import java.nio.charset.Charset
 import javax.microedition.khronos.opengles.GL10
 
@@ -43,6 +47,26 @@ object OpenGLUtils {
             shader = GLES20.GL_NONE
         }
         return shader
+    }
+
+    fun readShaderFromRawResource(context: Context, resourceId: Int): String? {
+        val inputStream: InputStream = context.resources.openRawResource(
+                resourceId)
+        val inputStreamReader = InputStreamReader(
+                inputStream)
+        val bufferedReader = BufferedReader(
+                inputStreamReader)
+        var nextLine: String?
+        val body = StringBuilder()
+        try {
+            while (bufferedReader.readLine().also { nextLine = it } != null) {
+                body.append(nextLine)
+                body.append('\n')
+            }
+        } catch (e: IOException) {
+            return null
+        }
+        return body.toString()
     }
 
     fun createProgram(vertexSource: String?, fragmentSource: String?): Int {

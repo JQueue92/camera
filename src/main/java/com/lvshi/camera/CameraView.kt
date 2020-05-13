@@ -11,7 +11,10 @@ import android.util.AttributeSet
 import android.view.View
 import androidx.annotation.NonNull
 import androidx.core.app.ActivityCompat
+import com.lvshi.camera.filter.BaseFilter
+import com.lvshi.camera.filter.BeautyFilter
 import com.lvshi.camera.utils.LogUtil
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -21,11 +24,13 @@ class CameraView(context: Context, attributeSet: AttributeSet) :
         SurfaceTexture.OnFrameAvailableListener {
 
     val TAG = "Camera"
-
+    private val isBeauty = AtomicBoolean(false)
     private var textureID = 0
     private lateinit var surfaceTexture: SurfaceTexture
     private lateinit var cameraKit: CameraKit
-    private lateinit var mDirectDrawer: DirectDrawer
+    private lateinit var mBaseFilter: BaseFilter
+    private lateinit var mBeautyFilter: BeautyFilter
+    private var mTransformMatrix: FloatArray = FloatArray(16)
 
     init {
         setEGLContextClientVersion(2)
@@ -55,22 +60,31 @@ class CameraView(context: Context, attributeSet: AttributeSet) :
         if (::surfaceTexture.isInitialized) {
             surfaceTexture.updateTexImage()
         }
-        mDirectDrawer.draw(textureID, !isFrontCamera())
+        surfaceTexture.getTransformMatrix(mTransformMatrix)
+        if (isBeauty()) {
+            mBeautyFilter.configTransfirmMartix(mTransformMatrix)
+            mBeautyFilter.draw(textureID, !isFrontCamera())
+        } else {
+            mBaseFilter?.draw(textureID, !isFrontCamera())
+        }
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
         GLES20.glViewport(0, 0, width, height)
         LogUtil.d(TAG, "onSurfaceChanged")
+        mBaseFilter?.configSize(width, height)
+        mBeautyFilter.configSize(width, height)
     }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         textureID = createTextureID()
         surfaceTexture = SurfaceTexture(textureID)
         surfaceTexture.setOnFrameAvailableListener(this)
-        mDirectDrawer = DirectDrawer()
         // open camera
+        mBaseFilter = BaseFilter()
+        mBeautyFilter = BeautyFilter(context)
         cameraKit = CameraKit(context, surfaceTexture)
-        if(ActivityCompat.checkSelfPermission(context,Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED){
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             cameraKit.startCameraPreview(width, height)
         }
     }
@@ -96,14 +110,23 @@ class CameraView(context: Context, attributeSet: AttributeSet) :
         }
     }
 
-    fun startPreview(){
-        if(ActivityCompat.checkSelfPermission(context,Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED){
+    fun beauty(level: Int = 5, open: Boolean = true) {
+        isBeauty.set(open)
+        mBeautyFilter.setBeautyLevel(level)
+    }
+
+    fun isBeauty() = isBeauty.get()
+
+    fun startPreview() {
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             cameraKit.startCameraPreview(width, height)
         }
     }
 
     fun startRecordVideo(@NonNull videoPath: String) {
-        cameraKit?.startRecordVideo(videoPath)
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            cameraKit?.startRecordVideo(videoPath)
+        }
     }
 
     fun isRecordingVideo(): Boolean = cameraKit?.isRecordingVideo()
